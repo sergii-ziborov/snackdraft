@@ -1,100 +1,78 @@
 # Snackdraft
 
-**Build a delicious combo.**
+**Pick one bite. Build a delicious little world.** Snackdraft is a cozy SwiftUI puzzle game for iPhone and iPad. Choose one of three ingredients each turn and place it on a 4×4 tasting tray. Side-connected ingredients make dishes; clever placement also earns combo points.
 
-Each turn you pick one of three snacks and place it on a 4×4 tray. Sixteen placements later the tray scores. Combos light up before you commit — a strawberry next to a cookie is visibly better than a strawberry in the corner.
+![iOS 18+](https://img.shields.io/badge/iOS-18%2B-1b2838) ![Swift 6](https://img.shields.io/badge/Swift-6-F05138) ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-0A84FF) [![MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-[![Platform](https://img.shields.io/badge/platform-iPhone%20%C2%B7%20iPad%20%C2%B7%20iOS%2018%2B-000000)](#app-target)
-[![Language](https://img.shields.io/badge/Swift-6-F05138)](#build-and-run)
-[![UI](https://img.shields.io/badge/UI-SwiftUI-0A84FF)](#build-and-run)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+| Home | Build a tray | Learn the recipe shape |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/home.jpg" alt="Snackdraft home screen" width="220"> | <img src="docs/screenshots/play.jpg" alt="Four by four play tray" width="220"> | <img src="docs/screenshots/guide.jpg" alt="Animated guide showing an L-shaped recipe and two dishes" width="220"> |
 
-## Play
+The current game has **33 ingredients, 71 recipes, 70 levels, 9 kitchens, and 10 achievements**. Journey mode gradually unlocks new kitchens and pantry items; Free Play lets you cook with everything unlocked in a kitchen without changing campaign stars. There is also a daily tray, sound cues, ambient kitchen music, and optional haptics.
 
-A round is one tray:
+## How to play
 
-1. Three snacks appear.
-2. Choose one.
-3. Empty cells that would form a combo show the bonus.
-4. Place it.
-5. Repeat until the tray is full.
+1. Pick **one of three** offered ingredients, then tap or drag it into an empty cell. A fresh offer appears after each placement.
+2. Join a recipe's ingredients **side-to-side**. The group can bend into an L or another shape; diagonal-only contact does not count. A different ingredient cannot bridge a recipe.
+3. One tray can make **several recipes**, even when they share ingredients. The live hint shows how many pieces of the suggested recipe are actually connected.
+4. **Serve as soon as one recipe is ready**, or continue for more recipes and points. Filling all 16 cells is optional and adds a +500 Full Tray bonus.
 
-Then the combos highlight one by one and the score lands.
+The separate **Sweet Line** combo is the exception: strawberry, cookie, and pancake must share one row or column. The first play opens an animated, replayable guide; the **?** button on the play screen opens it again.
 
-There is no restaurant, no staff, no cooking timer. You are building a lunch.
+[Full illustrated playing guide](docs/PLAY_GUIDE.md)
 
-## Combos
+## Kitchens and modes
 
-Eight snacks, seven readable rules:
+Tea & Treats → Bento Journey → Thai Night Market → Israeli Table → Italian Trattoria → Sweet Garden → Cozy Kitchen → Mexican Mercado → Indian Spice House.
 
-| Combo | What it is |
-| --- | --- |
-| **Berry Boost** | Strawberry next to a cookie or pancake: **+40** |
-| **Tea Pairing** | Tea next to a cookie: **+180** |
-| **Bento Pair** | Onigiri next to salmon: **+160** |
-| **Fresh Garnish** | Leaf next to tea: **+90** |
-| **Sweet Line** | Strawberry, cookie, and pancake in one row or column: **+600** |
-| **Color Variety** | 5 / 6 / 7 distinct colors: **+400 / +800 / +1,200** |
-| **Full Tray** | Every cell filled: **+500** |
+- **Journey:** clear levels and earn stars to unlock kitchens and new ingredients.
+- **Free Play:** choose an unlocked kitchen and use its full pantry; campaign stars stay unchanged.
+- **Daily tray:** a date-seeded challenge using an unlocked kitchen.
+- **Cookbook:** browse all recipes, the pantry, and achievements; filter recipes by kitchen or by those already made.
 
-Adjacency is orthogonal — no diagonals, no hidden multipliers. The number on a cell is the number you will get.
+| World Tour | Cookbook | Two recipes on one tray |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/world-tour.jpg" alt="Journey map with unlockable kitchens" width="220"> | <img src="docs/screenshots/cookbook.jpg" alt="Cookbook with cuisine filters" width="220"> | <img src="docs/screenshots/result.jpg" alt="Result showing two made recipes" width="220"> |
 
-The first party is just a pretty snack. A few turns later you start saving a hole for the tea that will finish two pairings at once.
+Screenshots are from the iPhone 13 mini simulator; the result uses a deterministic UI-test tray. No personal device screenshot is included.
 
-## Worlds
+## Build and test
 
-1. **Tea & Treats** — steam, cookies, dessert lines
-2. **Bento Journey** — rice buddies and salmon (unlocks after six tea trays or 12 stars)
-3. **Sweet Garden** — 18 stars
-4. **Cozy Kitchen** — 30 stars
-
-A daily tray uses the day’s date as a seed so everyone shares the same puzzle.
-
-## App target
-
-- iPhone and iPad (universal)
-- iOS 18+
-- Portrait on iPhone; portrait and landscape on iPad
-- No account, no tracking, no network
-
-Bundle ID: `com.sergiiziborov.snackdraft`
-
-## Build and run
+Open the checked-in `Snackdraft.xcodeproj` in Xcode and run the **Snackdraft** scheme on an iOS 18+ simulator. XcodeGen is only needed if you change `project.yml`:
 
 ```bash
-brew install xcodegen   # if needed
-cd snackdraft
-xcodegen generate
-open Snackdraft.xcodeproj
+brew install xcodegen
+sh scripts/generate-project.sh
 ```
 
-Select an iPhone or iPad simulator, then Run.
-
-Unit tests cover scoring, draft uniqueness, and a greedy bot that can still reach two stars on the opening trays:
+Run the unit and UI tests with an available simulator ID (`xcrun simctl list devices available`):
 
 ```bash
-xcodebuild test \
-  -scheme Snackdraft \
-  -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>'
+xcodebuild test -project Snackdraft.xcodeproj -scheme Snackdraft \
+  -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+For a physical iPhone, select your own Apple Developer Team and bundle ID in Xcode. The optional install helper requires your team ID and paired device UDID:
+
+```bash
+SNACKDRAFT_TEAM_ID=YOUR_TEAM_ID sh scripts/install-device.sh YOUR_DEVICE_UDID
 ```
 
 ## Project layout
 
-```
+```text
 Snackdraft/
-  App/              # scene, navigation, play session
-  Game/Engine/      # snacks, board, scoring, draft, levels
-  Game/Food/        # tray and snack art
-  Features/         # home, play, result, worlds, collection, settings
-  Persistence/      # local stars and collection
-  DesignSystem/     # color, type, buttons
-  Resources/        # asset catalog, privacy manifest
+  App/             navigation, progress, play sessions
+  Audio/           synthesized cues and kitchen ambience
+  Game/Engine/     board, draft, recipes, scoring, level catalog
+  Game/Food/       ingredient art and tray rendering
+  Features/        home, play, result, worlds, cookbook, settings
+  Persistence/     on-device saves
+  Resources/       image assets and privacy manifest
+SnackdraftTests/   game-rule tests
+SnackdraftUITests/ screen and interaction tests
+docs/              guides and simulator screenshots
 ```
 
-## Why this shape
-
-The player builds their own result. A second tray is different because the combinations were different, not because the wallpaper changed. The set is small on purpose: eight snacks, one board, bonuses you can see.
-
-## License
-
-MIT. See [LICENSE](LICENSE). Privacy notes live in [PRIVACY.md](PRIVACY.md).
+Snackdraft has no account, advertising, analytics, or backend. Progress stays on the device. See [Privacy](PRIVACY.md) and the [MIT license](LICENSE).

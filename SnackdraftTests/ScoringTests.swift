@@ -68,6 +68,62 @@ struct ScoringTests {
         #expect(score.combos.contains { $0.kind == .garnish && $0.points == ScoreEngine.garnishPoints })
     }
 
+    @Test("New pantry ingredients create cuisine-specific bonuses")
+    func worldKitchenBonuses() {
+        var board = Board()
+        board.place(.soySauce, at: Cell(row: 0, col: 0))
+        board.place(.salmon, at: Cell(row: 0, col: 1))
+        board.place(.lime, at: Cell(row: 1, col: 2))
+        board.place(.shrimp, at: Cell(row: 1, col: 1))
+        board.place(.hummus, at: Cell(row: 3, col: 0))
+        board.place(.pita, at: Cell(row: 3, col: 1))
+
+        let score = ScoreEngine.evaluate(board)
+        #expect(score.combos.contains { $0.kind == .umamiDrizzle && $0.points == ScoreEngine.umamiPoints })
+        #expect(score.combos.contains { $0.kind == .limeLift && $0.points == ScoreEngine.limeLiftPoints })
+        #expect(score.combos.contains { $0.kind == .mezzePair && $0.points == ScoreEngine.mezzePairPoints })
+    }
+
+    @Test("Mercado and spice-house ingredients create their own bonuses")
+    func expandedWorldBonuses() {
+        var board = Board()
+        board.place(.tortilla, at: Cell(row: 0, col: 0))
+        board.place(.beans, at: Cell(row: 0, col: 1))
+        board.place(.chili, at: Cell(row: 1, col: 1))
+        board.place(.curry, at: Cell(row: 2, col: 2))
+        board.place(.naan, at: Cell(row: 2, col: 3))
+        board.place(.mango, at: Cell(row: 3, col: 0))
+        board.place(.lime, at: Cell(row: 3, col: 1))
+
+        let score = ScoreEngine.evaluate(board)
+        #expect(score.combos.contains { $0.kind == .tacoBase && $0.points == ScoreEngine.tacoBasePoints })
+        #expect(score.combos.contains { $0.kind == .chiliSpark && $0.points == ScoreEngine.chiliSparkPoints })
+        #expect(score.combos.contains { $0.kind == .spicePair && $0.points == ScoreEngine.spicePairPoints })
+        #expect(score.combos.contains { $0.kind == .mangoCooler && $0.points == ScoreEngine.mangoCoolerPoints })
+    }
+
+    @Test("Expanded pantry ingredients create five new flavor bonuses")
+    func newestPantryBonuses() {
+        var board = Board()
+        board.place(.garlic, at: Cell(row: 0, col: 0))
+        board.place(.mushroom, at: Cell(row: 0, col: 1))
+        board.place(.corn, at: Cell(row: 1, col: 0))
+        board.place(.lime, at: Cell(row: 2, col: 0))
+        board.place(.yogurt, at: Cell(row: 2, col: 1))
+        board.place(.mango, at: Cell(row: 2, col: 2))
+        board.place(.olive, at: Cell(row: 3, col: 2))
+        board.place(.tomato, at: Cell(row: 3, col: 3))
+        board.place(.ginger, at: Cell(row: 1, col: 3))
+        board.place(.shrimp, at: Cell(row: 0, col: 3))
+
+        let score = ScoreEngine.evaluate(board)
+        #expect(score.combos.contains { $0.kind == .garlicAroma && $0.points == ScoreEngine.garlicAromaPoints })
+        #expect(score.combos.contains { $0.kind == .cornCrunch && $0.points == ScoreEngine.cornCrunchPoints })
+        #expect(score.combos.contains { $0.kind == .creamyCool && $0.points == ScoreEngine.creamyCoolPoints })
+        #expect(score.combos.contains { $0.kind == .oliveGarden && $0.points == ScoreEngine.oliveGardenPoints })
+        #expect(score.combos.contains { $0.kind == .gingerZing && $0.points == ScoreEngine.gingerZingPoints })
+    }
+
     @Test("Sweet line needs all three desserts in the same row")
     func sweetLine() {
         var almost = Board()
@@ -163,10 +219,16 @@ struct DraftTests {
 struct CatalogTests {
     @Test("Each world has a playable run of levels")
     func counts() {
+        #expect(SnackID.allCases.count == 33)
         #expect(LevelCatalog.levels(for: .tea).count == 12)
         #expect(LevelCatalog.levels(for: .bento).count == 12)
+        #expect(LevelCatalog.levels(for: .thai).count == 6)
+        #expect(LevelCatalog.levels(for: .israeli).count == 6)
+        #expect(LevelCatalog.levels(for: .italian).count == 6)
         #expect(LevelCatalog.levels(for: .garden).count == 8)
         #expect(LevelCatalog.levels(for: .kitchen).count == 8)
+        #expect(LevelCatalog.levels(for: .mexican).count == 6)
+        #expect(LevelCatalog.levels(for: .indian).count == 6)
         for world in WorldID.allCases {
             for (index, level) in LevelCatalog.levels(for: world).enumerated() {
                 #expect(level.index == index)
@@ -176,12 +238,45 @@ struct CatalogTests {
         }
     }
 
+    @Test("Free play opens the accumulated pantry without mutating the journey")
+    func freePlayPantry() {
+        let free = LevelCatalog.freeLevel(world: .italian)
+        let pantry = LevelCatalog.pantry(for: .italian)
+        #expect(Set(free.pool) == Set(pantry))
+        #expect(free.pool.contains(.garlic))
+        #expect(free.pool.contains(.mushroom))
+        #expect(free.pool.contains(.olive))
+
+        var progress = ProgressState.fresh
+        progress.recordFree(snacks: [.garlic, .mushroom], recipes: [])
+        #expect(progress.totalStars == 0)
+        #expect(progress.hasSeen(.garlic))
+        #expect(progress.hasSeen(.mushroom))
+
+        let context = PlayContext(world: .italian, levelIndex: 0, seed: 99, isDaily: false, isFree: true)
+        #expect(context.isFree)
+        #expect(context.level.title == "Free kitchen")
+        #expect(Set(context.level.pool) == Set(pantry))
+    }
+
+    @Test("New ingredients arrive on later journey stops")
+    func pantryRevealOrder() {
+        #expect(!LevelCatalog.level(world: .italian, index: 0).pool.contains(.garlic))
+        #expect(LevelCatalog.level(world: .italian, index: 1).pool.contains(.garlic))
+        #expect(!LevelCatalog.level(world: .italian, index: 2).pool.contains(.mushroom))
+        #expect(LevelCatalog.level(world: .italian, index: 3).pool.contains(.mushroom))
+        #expect(!LevelCatalog.level(world: .mexican, index: 0).pool.contains(.corn))
+        #expect(LevelCatalog.level(world: .mexican, index: 1).pool.contains(.corn))
+    }
+
     @Test("A greedy placer can reach two stars on the opening trays")
     func greedyClearsOpeners() {
         let openers = [
             LevelCatalog.level(world: .tea, index: 0),
             LevelCatalog.level(world: .tea, index: 1),
             LevelCatalog.level(world: .bento, index: 0),
+            LevelCatalog.level(world: .mexican, index: 0),
+            LevelCatalog.level(world: .indian, index: 0),
         ]
         for level in openers {
             var misses: [UInt64] = []
@@ -205,5 +300,188 @@ struct CatalogTests {
             turn += 1
         }
         return ScoreEngine.evaluate(board).total
+    }
+}
+
+struct RecipeTests {
+    @Test("Every plated recipe is saved and revealed, not only the first")
+    func multipleRecipesReveal() {
+        var board = Board()
+        board.place(.tea, at: Cell(row: 0, col: 0))
+        board.place(.cookie, at: Cell(row: 0, col: 1))
+        board.place(.strawberry, at: Cell(row: 0, col: 2))
+
+        let dishes = RecipeBook.matches(board: board, world: .tea)
+        #expect(Set(dishes.map(\.id)) == ["afternoon-tea", "ichigo-afternoon"])
+
+        var progress = ProgressState.fresh
+        progress.record(level: LevelCatalog.level(world: .tea, index: 0), stars: 1,
+                        snacks: [.tea, .cookie, .strawberry], recipes: dishes)
+        #expect(dishes.allSatisfy(progress.hasDiscovered))
+
+        var reveal = RecipeRevealSequence(dishes: dishes)
+        #expect(reveal.current?.id == dishes[0].id)
+        reveal.advance()
+        #expect(reveal.current?.id == dishes[1].id)
+        reveal.advance()
+        #expect(reveal.current == nil)
+    }
+
+    @Test("Every recipe is unique and playable in its own kitchen")
+    func recipesAreReachable() {
+        #expect(RecipeBook.all.count >= 70)
+        #expect(Set(RecipeBook.all.map(\.id)).count == RecipeBook.all.count)
+        for recipe in RecipeBook.all {
+            let reachable = LevelCatalog.levels(for: recipe.world).contains { level in
+                recipe.ingredients.allSatisfy(level.pool.contains)
+            }
+            #expect(reachable, "\(recipe.id) is not offered by any \(recipe.world.rawValue) level")
+        }
+    }
+
+    @Test("Legacy progress enables ambient music by default")
+    func legacyProgressMigration() throws {
+        let json = Data(#"{"starsByLevel":{},"seenSnacks":[],"hapticsEnabled":true,"soundEnabled":true,"discoveredRecipes":[]}"#.utf8)
+        let progress = try JSONDecoder().decode(ProgressState.self, from: json)
+        #expect(progress.musicEnabled)
+    }
+
+    @Test("Tea next to a cookie plates Afternoon Tea")
+    func afternoonTea() {
+        var board = Board()
+        board.place(.tea, at: Cell(row: 0, col: 0))
+        board.place(.cookie, at: Cell(row: 0, col: 1))
+        let dish = RecipeBook.match(board: board, world: .tea)
+        #expect(dish?.id == "afternoon-tea")
+    }
+
+    @Test("Diagonal ingredients do not count")
+    func noDiagonal() {
+        var board = Board()
+        board.place(.onigiri, at: Cell(row: 0, col: 0))
+        board.place(.salmon, at: Cell(row: 1, col: 1))
+        #expect(RecipeBook.match(board: board, world: .bento) == nil)
+    }
+
+    @Test("Recipe progress counts only side-connected ingredients")
+    func connectedRecipeProgress() {
+        let recipe = RecipeBook.recipes(for: .tea).first { $0.id == "ichigo-afternoon" }!
+        var board = Board()
+        board.place(.tea, at: Cell(row: 1, col: 1))
+        board.place(.cookie, at: Cell(row: 1, col: 2))
+        board.place(.strawberry, at: Cell(row: 2, col: 3))
+        #expect(recipe.connectedIngredients(on: board) == Set([.tea, .cookie]))
+        #expect(!recipe.matches(board))
+
+        board.place(.strawberry, at: Cell(row: 2, col: 2))
+        #expect(recipe.connectedIngredients(on: board) == Set([.tea, .cookie, .strawberry]))
+        #expect(recipe.matches(board))
+        #expect(Set(RecipeBook.matches(board: board, world: .tea).map(\.id)) == ["afternoon-tea", "ichigo-afternoon"])
+    }
+
+    @Test("An unrelated ingredient cannot bridge recipe pieces")
+    func unrelatedSnackDoesNotConnectRecipe() {
+        let recipe = RecipeBook.recipes(for: .tea).first { $0.id == "afternoon-tea" }!
+        var board = Board()
+        board.place(.tea, at: Cell(row: 0, col: 0))
+        board.place(.pancake, at: Cell(row: 0, col: 1))
+        board.place(.cookie, at: Cell(row: 0, col: 2))
+        #expect(recipe.connectedIngredients(on: board).count == 1)
+        #expect(!recipe.matches(board))
+    }
+
+    @Test("World prefers its own dish when several match")
+    func prefersTheme() {
+        var board = Board()
+        board.place(.tea, at: Cell(row: 0, col: 0))
+        board.place(.cookie, at: Cell(row: 0, col: 1))
+        board.place(.onigiri, at: Cell(row: 2, col: 2))
+        board.place(.salmon, at: Cell(row: 2, col: 3))
+        #expect(RecipeBook.match(board: board, world: .tea)?.id == "afternoon-tea")
+        #expect(RecipeBook.match(board: board, world: .bento)?.id == "shake-onigiri")
+    }
+
+    @Test("Recipes never leak across locked cuisines")
+    func recipesStayInTheirWorld() {
+        var board = Board()
+        board.place(.hummus, at: Cell(row: 0, col: 0))
+        board.place(.pita, at: Cell(row: 0, col: 1))
+        #expect(RecipeBook.match(board: board, world: .tea) == nil)
+    }
+
+    @Test("Ingredients and levels reveal progressively")
+    func progressivePantry() {
+        var progress = ProgressState.fresh
+        let teaOne = LevelCatalog.level(world: .tea, index: 0)
+        let teaTwo = LevelCatalog.level(world: .tea, index: 1)
+        #expect(progress.isLevelUnlocked(teaOne))
+        #expect(!progress.isLevelUnlocked(teaTwo))
+        #expect(!progress.isAvailable(.mochi))
+
+        progress.record(level: teaOne, stars: 1, snacks: [])
+        #expect(progress.isLevelUnlocked(teaTwo))
+        #expect(progress.isAvailable(.mochi))
+        #expect(!progress.isAvailable(.soySauce))
+    }
+
+    @Test("A three-piece cluster beats the two-piece snack")
+    func clusterBeatsPair() {
+        var board = Board()
+        board.place(.onigiri, at: Cell(row: 1, col: 1))
+        board.place(.salmon, at: Cell(row: 1, col: 2))
+        board.place(.tamago, at: Cell(row: 1, col: 0))
+        #expect(RecipeBook.match(board: board, world: .bento)?.id == "makunouchi")
+    }
+
+    @Test("World cuisines match their own connected dishes")
+    func worldCuisineRecipes() {
+        var thai = Board()
+        thai.place(.shrimp, at: Cell(row: 0, col: 0))
+        thai.place(.lime, at: Cell(row: 0, col: 1))
+        thai.place(.leaf, at: Cell(row: 0, col: 2))
+        #expect(RecipeBook.match(board: thai, world: .thai)?.id == "tom-yum")
+
+        var israeli = Board()
+        israeli.place(.hummus, at: Cell(row: 1, col: 1))
+        israeli.place(.pita, at: Cell(row: 1, col: 2))
+        #expect(RecipeBook.match(board: israeli, world: .israeli)?.id == "hummus-pita")
+
+        var italian = Board()
+        italian.place(.pasta, at: Cell(row: 2, col: 2))
+        italian.place(.tomato, at: Cell(row: 2, col: 3))
+        #expect(RecipeBook.match(board: italian, world: .italian)?.id == "pasta-pomodoro")
+
+        var mexican = Board()
+        mexican.place(.tortilla, at: Cell(row: 0, col: 0))
+        mexican.place(.beans, at: Cell(row: 0, col: 1))
+        #expect(RecipeBook.match(board: mexican, world: .mexican)?.id == "bean-taco")
+
+        var indian = Board()
+        indian.place(.curry, at: Cell(row: 1, col: 0))
+        indian.place(.naan, at: Cell(row: 1, col: 1))
+        #expect(RecipeBook.match(board: indian, world: .indian)?.id == "curry-naan")
+    }
+
+    @Test("A connected recipe makes a tray serveable before it is full")
+    @MainActor
+    func earlyServe() {
+        let context = PlayContext(world: .tea, levelIndex: 0, seed: 7, isDaily: false)
+        let session = PlaySession(context: context)
+        session.board.place(.tea, at: Cell(row: 0, col: 0))
+        session.board.place(.cookie, at: Cell(row: 0, col: 1))
+        #expect(session.board.filledCount == 2)
+        #expect(session.canServe)
+        session.serve()
+        #expect(session.phase == .revealing)
+    }
+
+    @Test("App model starts a true free-play session")
+    @MainActor
+    func startsFreePlay() {
+        let model = AppModel()
+        model.playFree(world: .tea)
+        #expect(model.screen == .play)
+        #expect(model.session?.context.isFree == true)
+        #expect(model.session?.level.title == "Free kitchen")
     }
 }

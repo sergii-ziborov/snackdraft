@@ -8,6 +8,7 @@ struct SnackdraftApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
+                .background(Palette.navy.ignoresSafeArea())
         }
     }
 }
@@ -32,6 +33,10 @@ struct RootView: View {
                 SettingsView()
             }
         }
+        .id(screenKey)
+        .transition(.opacity.combined(with: .scale(scale: 0.985)))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .clipped()
         .animation(.easeInOut(duration: 0.22), value: screenKey)
         .tint(Palette.moss)
     }

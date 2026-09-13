@@ -1,5 +1,25 @@
 import SwiftUI
 
+struct ScreenBackground: View {
+    var image: String
+    var dim: Double = 0.35
+    var opacity: Double = 1
+
+    var body: some View {
+        GeometryReader { geo in
+            Image(image)
+                .resizable()
+                .scaledToFill()
+                .opacity(opacity)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+                .overlay(Color.black.opacity(dim))
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+}
+
 enum Palette {
     static let cream = Color(red: 0.980, green: 0.925, blue: 0.870)
     static let creamDark = Color(red: 0.94, green: 0.88, blue: 0.80)
@@ -29,12 +49,80 @@ extension Font {
     }
 }
 
+extension SnackID {
+    var accent: Color {
+        switch self {
+        case .strawberry: Color(red: 0.91, green: 0.22, blue: 0.32)
+        case .cookie: Color(red: 0.72, green: 0.42, blue: 0.18)
+        case .pancake: Color(red: 0.95, green: 0.68, blue: 0.18)
+        case .tea: Color(red: 0.18, green: 0.64, blue: 0.34)
+        case .onigiri: Color(red: 0.95, green: 0.93, blue: 0.90)
+        case .salmon: Color(red: 0.96, green: 0.42, blue: 0.24)
+        case .cheese: Color(red: 0.98, green: 0.78, blue: 0.16)
+        case .leaf: Color(red: 0.32, green: 0.72, blue: 0.26)
+        case .blueberry: Color(red: 0.28, green: 0.32, blue: 0.78)
+        case .mochi: Color(red: 0.96, green: 0.62, blue: 0.78)
+        case .tamago: Color(red: 0.96, green: 0.78, blue: 0.28)
+        case .shrimp: Color(red: 0.96, green: 0.48, blue: 0.32)
+        case .tomato: Color(red: 0.90, green: 0.22, blue: 0.22)
+        case .avocado: Color(red: 0.42, green: 0.72, blue: 0.22)
+        case .bacon: Color(red: 0.72, green: 0.28, blue: 0.22)
+        case .soySauce: Color(red: 0.38, green: 0.20, blue: 0.10)
+        case .lime: Color(red: 0.48, green: 0.78, blue: 0.16)
+        case .coconut: Color(red: 0.75, green: 0.58, blue: 0.38)
+        case .hummus: Color(red: 0.86, green: 0.68, blue: 0.34)
+        case .pita: Color(red: 0.82, green: 0.56, blue: 0.28)
+        case .pasta: Color(red: 0.94, green: 0.66, blue: 0.20)
+        case .tortilla: Color(red: 0.92, green: 0.68, blue: 0.28)
+        case .beans: Color(red: 0.34, green: 0.16, blue: 0.15)
+        case .chili: Color(red: 0.94, green: 0.18, blue: 0.16)
+        case .mango: Color(red: 0.98, green: 0.62, blue: 0.12)
+        case .curry: Color(red: 0.90, green: 0.52, blue: 0.12)
+        case .naan: Color(red: 0.84, green: 0.58, blue: 0.30)
+        case .garlic: Color(red: 0.90, green: 0.84, blue: 0.64)
+        case .mushroom: Color(red: 0.62, green: 0.38, blue: 0.25)
+        case .corn: Color(red: 0.98, green: 0.76, blue: 0.12)
+        case .yogurt: Color(red: 0.82, green: 0.88, blue: 0.96)
+        case .olive: Color(red: 0.42, green: 0.44, blue: 0.16)
+        case .ginger: Color(red: 0.90, green: 0.58, blue: 0.22)
+        }
+    }
+}
+
+extension ComboKind {
+    var tint: Color {
+        switch self {
+        case .berryBoost: Color(red: 0.93, green: 0.25, blue: 0.40)
+        case .teaPairing: Color(red: 0.20, green: 0.70, blue: 0.42)
+        case .bentoPair: Color(red: 0.96, green: 0.45, blue: 0.18)
+        case .garnish: Color(red: 0.40, green: 0.78, blue: 0.28)
+        case .umamiDrizzle: Color(red: 0.72, green: 0.42, blue: 0.20)
+        case .limeLift: Color(red: 0.62, green: 0.88, blue: 0.18)
+        case .mezzePair: Color(red: 0.94, green: 0.66, blue: 0.28)
+        case .pastaPair: Color(red: 0.94, green: 0.36, blue: 0.24)
+        case .tacoBase: Color(red: 0.12, green: 0.66, blue: 0.60)
+        case .chiliSpark: Color(red: 0.96, green: 0.18, blue: 0.14)
+        case .spicePair: Color(red: 0.94, green: 0.56, blue: 0.12)
+        case .mangoCooler: Color(red: 0.98, green: 0.68, blue: 0.12)
+        case .garlicAroma: Color(red: 0.92, green: 0.78, blue: 0.42)
+        case .cornCrunch: Color(red: 0.98, green: 0.72, blue: 0.10)
+        case .creamyCool: Color(red: 0.52, green: 0.78, blue: 0.96)
+        case .oliveGarden: Color(red: 0.55, green: 0.64, blue: 0.20)
+        case .gingerZing: Color(red: 0.96, green: 0.48, blue: 0.16)
+        case .sweetLine: Color(red: 0.90, green: 0.42, blue: 0.78)
+        case .colorVariety: Color(red: 0.38, green: 0.52, blue: 0.98)
+        case .fullTray: Palette.gold
+        }
+    }
+}
+
 struct SDButton: View {
     enum Kind { case play, success, quiet, gold }
 
     var title: String
     var kind: Kind = .play
     var icon: String? = nil
+    var compact: Bool = false
     var action: () -> Void
 
     var body: some View {
@@ -45,10 +133,10 @@ struct SDButton: View {
                 }
                 Text(title)
             }
-            .font(.sdBody(18))
+            .font(.sdBody(compact ? 16 : 18))
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, compact ? 12 : 16)
             .background(background, in: Capsule())
             .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
         }
@@ -135,9 +223,29 @@ struct ScreenHeader: View {
                 .font(.sdDisplay(22))
                 .foregroundStyle(light ? Color.white : Palette.ink)
             Spacer()
-            Color.clear.frame(width: 18)
+            Color.clear.frame(width: 18, height: 18)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+    }
+}
+
+struct PageShell<Content: View>: View {
+    var title: String
+    var onBack: () -> Void
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                ScreenHeader(title: title, back: onBack)
+                content()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            .background(Palette.cream)
+        }
+        .background(Palette.cream.ignoresSafeArea())
     }
 }

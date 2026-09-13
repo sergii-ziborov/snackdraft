@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0232EDA6D34D4887E91CD303 /* Recipes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F5083A86AB34D6ECFD646D /* Recipes.swift */; };
 		078C41E711D1E4499C7941E4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E00D790B360A5EEAC0587F /* SettingsView.swift */; };
 		134F904B88B28196600BB65F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68155E3E64280D7E9991926B /* HomeView.swift */; };
 		195AA037F641BC2954986D46 /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FFFDD1188B3BBA45678F45D /* Catalog.swift */; };
@@ -56,6 +57,7 @@
 		326B2AA457871698C595BC51 /* Stores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stores.swift; sourceTree = "<group>"; };
 		3DBFE0707726B59B4B033B9D /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
 		3FFFDD1188B3BBA45678F45D /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
+		48F5083A86AB34D6ECFD646D /* Recipes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recipes.swift; sourceTree = "<group>"; };
 		4E89C3C1C9C318C02A4665D5 /* ScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringTests.swift; sourceTree = "<group>"; };
 		633EC3ACB4F124537667E06F /* Draft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Draft.swift; sourceTree = "<group>"; };
 		6775FABB5F65342C8D329D08 /* PlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayView.swift; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 				3FFFDD1188B3BBA45678F45D /* Catalog.swift */,
 				633EC3ACB4F124537667E06F /* Draft.swift */,
 				DF4F6F54FDCF8BF41728C3A0 /* Models.swift */,
+				48F5083A86AB34D6ECFD646D /* Recipes.swift */,
 				C0AD2068CC5BD9D03FA990BD /* Scoring.swift */,
 				7DC6A332E6CBE8EE0FF8CC02 /* SeededRNG.swift */,
 			);
@@ -384,6 +387,7 @@
 				134F904B88B28196600BB65F /* HomeView.swift in Sources */,
 				D661185C737527E36F607820 /* Models.swift in Sources */,
 				736DD0B2BFDE2BC95010925C /* PlayView.swift in Sources */,
+				0232EDA6D34D4887E91CD303 /* Recipes.swift in Sources */,
 				E96D0A452218A14B7CA2340B /* ResultView.swift in Sources */,
 				58CC56C1DFF7C4DB46B0AA8E /* Scoring.swift in Sources */,
 				9D358AD1A8C1F7AC632DE94B /* SeededRNG.swift in Sources */,

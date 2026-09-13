@@ -10,6 +10,13 @@ enum Screen: Equatable {
     case settings
 }
 
+enum WorldBrowseMode: String, CaseIterable, Identifiable {
+    case journey = "Journey"
+    case free = "Free Play"
+
+    var id: String { rawValue }
+}
+
 @MainActor
 @Observable
 final class AppModel {
@@ -17,12 +24,36 @@ final class AppModel {
     var progress: ProgressState
     var session: PlaySession?
     var lastOutcome: TrayOutcome?
+    var worldBrowseMode: WorldBrowseMode = .journey
 
     private let store: ProgressStore
 
     init(store: ProgressStore = ProgressStore()) {
         self.store = store
         self.progress = store.load()
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("ui-testing-multiple-recipes") {
+            var board = Board()
+            board.place(.tea, at: Cell(row: 0, col: 0))
+            board.place(.cookie, at: Cell(row: 0, col: 1))
+            board.place(.strawberry, at: Cell(row: 0, col: 2))
+            let dishes = RecipeBook.matches(board: board, world: .tea)
+            progress.recordFree(snacks: [.tea, .cookie, .strawberry], recipes: dishes)
+            lastOutcome = TrayOutcome(
+                breakdown: ScoreEngine.evaluate(board),
+                stars: 2,
+                board: board,
+                world: .tea,
+                levelIndex: 0,
+                isDaily: false,
+                isFree: false,
+                dishes: dishes,
+                newDishIDs: Set(dishes.map(\.id)),
+                newAchievements: []
+            )
+            screen = .result
+        }
+#endif
     }
 
     func playTapped() {
@@ -34,14 +65,20 @@ final class AppModel {
         let day = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 1
         let worlds = WorldID.allCases.filter { progress.isUnlocked($0) }
         let world = worlds[day % max(worlds.count, 1)]
-        let levels = LevelCatalog.levels(for: world)
-        let index = day % levels.count
-        startPlay(world: world, index: index, daily: true, seed: UInt64(day) &* 1_000_003)
+        let levels = LevelCatalog.levels(for: world).filter { progress.isLevelUnlocked($0) }
+        let level = levels[day % max(levels.count, 1)]
+        startPlay(world: world, index: level.index, daily: true, seed: UInt64(day) &* 1_000_003)
     }
 
     func play(world: WorldID, index: Int) {
-        guard progress.isUnlocked(world) else { return }
+        let level = LevelCatalog.level(world: world, index: index)
+        guard progress.isLevelUnlocked(level) else { return }
         startPlay(world: world, index: index, daily: false)
+    }
+
+    func playFree(world: WorldID) {
+        guard progress.isUnlocked(world) else { return }
+        startPlay(world: world, index: 0, daily: false, free: true)
     }
 
     func retry() {
@@ -50,6 +87,7 @@ final class AppModel {
             world: session.context.world,
             index: session.context.levelIndex,
             daily: session.context.isDaily,
+            free: session.context.isFree,
             seed: session.context.isDaily ? session.context.seed : nil
         )
     }
@@ -59,7 +97,14 @@ final class AppModel {
             screen = .home
             return
         }
-        if let next = LevelCatalog.next(after: session.context), progress.isUnlocked(next.0) {
+        if session.context.isFree {
+            worldBrowseMode = .free
+            screen = .worlds
+            self.session = nil
+            return
+        }
+        if let next = LevelCatalog.next(after: session.context),
+           progress.isLevelUnlocked(LevelCatalog.level(world: next.0, index: next.1)) {
             startPlay(world: next.0, index: next.1, daily: false)
         } else {
             screen = .worlds
@@ -70,9 +115,18 @@ final class AppModel {
     func finishTray() {
         guard let session else { return }
         let breakdown = session.breakdown
-        let stars = ScoreEngine.stars(score: breakdown.total, level: session.context.level)
+        let dishes = RecipeBook.matches(board: session.board, world: session.context.world)
+        let newDishIDs = Set(dishes.filter { !progress.hasDiscovered($0) }.map(\.id))
+        let achievementsBefore = Set(AchievementBook.unlocked(in: progress).map(\.id))
+        let total = breakdown.total + dishes.reduce(0) { $0 + $1.bonus }
+        let stars = ScoreEngine.stars(score: total, level: session.context.level)
         let snacks = session.board.placed().map(\.1)
-        progress.record(level: session.context.level, stars: stars, snacks: snacks)
+        if session.context.isFree {
+            progress.recordFree(snacks: snacks, recipes: dishes)
+        } else {
+            progress.record(level: session.context.level, stars: stars, snacks: snacks, recipes: dishes)
+        }
+        let newAchievements = AchievementBook.unlocked(in: progress).filter { !achievementsBefore.contains($0.id) }
         store.save(progress)
         lastOutcome = TrayOutcome(
             breakdown: breakdown,
@@ -80,11 +134,17 @@ final class AppModel {
             board: session.board,
             world: session.context.world,
             levelIndex: session.context.levelIndex,
-            isDaily: session.context.isDaily
+            isDaily: session.context.isDaily,
+            isFree: session.context.isFree,
+            dishes: dishes,
+            newDishIDs: newDishIDs,
+            newAchievements: newAchievements
         )
         if progress.hapticsEnabled {
             Feedback.success()
         }
+        GameAudio.shared.stopAmbient()
+        GameAudio.shared.play(newAchievements.isEmpty ? .result : .unlock, world: session.context.world, enabled: progress.soundEnabled)
         screen = .result
     }
 
@@ -98,6 +158,7 @@ final class AppModel {
     }
 
     func goHome() {
+        GameAudio.shared.stopAmbient()
         session = nil
         lastOutcome = nil
         screen = .home
@@ -107,12 +168,13 @@ final class AppModel {
         ProcessInfo.processInfo.arguments.contains("ui-testing")
     }
 
-    private func startPlay(world: WorldID, index: Int, daily: Bool, seed: UInt64? = nil) {
+    private func startPlay(world: WorldID, index: Int, daily: Bool, free: Bool = false, seed: UInt64? = nil) {
         let context = PlayContext(
             world: world,
             levelIndex: index,
             seed: seed ?? UInt64.random(in: 1...UInt64.max),
-            isDaily: daily
+            isDaily: daily,
+            isFree: free
         )
         session = PlaySession(context: context)
         lastOutcome = nil
@@ -133,6 +195,8 @@ final class PlaySession {
     var phase: Phase = .picking
     var revealIndex: Int = 0
     var tipCell: Cell?
+    var hoverCell: Cell?
+    var lastPlaced: Cell?
 
     private var history: [Snapshot] = []
 
@@ -159,6 +223,9 @@ final class PlaySession {
     var level: LevelDef { context.level }
     var breakdown: ScoreBreakdown { ScoreEngine.evaluate(board) }
     var placementsLeft: Int { Board.capacity - board.filledCount }
+    var completedRecipes: [DishRecipe] { RecipeBook.matches(board: board, world: context.world) }
+    var suggestedRecipe: DishRecipe? { RecipeBook.suggested(for: level) }
+    var canServe: Bool { phase == .picking && !completedRecipes.isEmpty }
 
     func select(_ snack: SnackID) {
         guard phase == .picking, offer.contains(snack) else { return }
@@ -170,17 +237,21 @@ final class PlaySession {
         tipCell = nil
     }
 
-    func preview(at cell: Cell) -> PlacementPreview? {
-        guard let selected, board[cell] == nil else { return nil }
-        return ScoreEngine.preview(placing: selected, at: cell, on: board)
+    func preview(placing snack: SnackID? = nil, at cell: Cell) -> PlacementPreview? {
+        guard let piece = snack ?? selected, board[cell] == nil else { return nil }
+        return ScoreEngine.preview(placing: piece, at: cell, on: board)
     }
 
-    func place(at cell: Cell) {
-        guard phase == .picking, let snack = selected, board[cell] == nil else { return }
+    func place(_ snack: SnackID? = nil, at cell: Cell) {
+        guard phase == .picking, board[cell] == nil else { return }
+        guard let piece = snack ?? selected else { return }
+        if snack != nil && !offer.contains(piece) { return }
         history.append(Snapshot(board: board, offer: offer, turn: turn, undosLeft: undosLeft, tipsLeft: tipsLeft))
-        board.place(snack, at: cell)
+        board.place(piece, at: cell)
+        lastPlaced = cell
         selected = nil
         tipCell = nil
+        hoverCell = nil
         if board.isFull {
             phase = .revealing
             revealIndex = 0
@@ -199,6 +270,8 @@ final class PlaySession {
         tipsLeft = snap.tipsLeft
         selected = nil
         tipCell = nil
+        hoverCell = nil
+        lastPlaced = nil
     }
 
     func useTip() {
@@ -207,6 +280,15 @@ final class PlaySession {
         selected = best.0
         tipCell = best.1
         tipsLeft -= 1
+    }
+
+    func serve() {
+        guard canServe else { return }
+        selected = nil
+        tipCell = nil
+        hoverCell = nil
+        phase = .revealing
+        revealIndex = 0
     }
 
     func advanceReveal() -> Bool {
