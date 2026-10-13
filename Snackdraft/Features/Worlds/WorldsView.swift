@@ -192,6 +192,7 @@ struct WorldsView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 126)
                     .clipped()
+                    .allowsHitTesting(false)
                     .overlay { LinearGradient(colors: [.clear, Palette.navy.opacity(0.82)], startPoint: .top, endPoint: .bottom) }
                     .overlay { if !unlocked { Color.black.opacity(0.42) } }
                     VStack(alignment: .leading, spacing: 2) {
@@ -231,6 +232,7 @@ struct WorldsView: View {
             }
             .background(Color.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: .black.opacity(0.08), radius: 9, y: 4)
         }
         .buttonStyle(.plain)

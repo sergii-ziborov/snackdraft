@@ -19,7 +19,6 @@ struct PlayView: View {
                 let short = geo.size.height < 760
                 let trayCap = min(geo.size.width - 28, max(180, geo.size.height * 0.46))
                 ZStack {
-                    ScreenBackground(image: session.context.world.backgroundAsset, dim: 0.28)
                     VStack(spacing: 0) {
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: short ? 6 : 10) {
@@ -60,7 +59,9 @@ struct PlayView: View {
                     }
                 }
                 .frame(width: geo.size.width, height: geo.size.height)
-                .clipped()
+                .background {
+                    ScreenBackground(image: session.context.world.backgroundAsset, dim: 0.28)
+                }
                 .coordinateSpace(name: "play")
                 .onPreferenceChange(CellFramesKey.self) { cellFrames = $0 }
             }
@@ -97,6 +98,7 @@ struct PlayView: View {
                     didSeeRecipeGuide = true
                     showRecipeGuide = false
                 }
+                .preferredColorScheme(.light)
             }
         } else {
             Color.black.onAppear { model.goHome() }

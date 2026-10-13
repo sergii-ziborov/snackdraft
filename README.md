@@ -34,7 +34,7 @@ Tea & Treats → Bento Journey → Thai Night Market → Israeli Table → Itali
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/world-tour.jpg" alt="Journey map with unlockable kitchens" width="220"> | <img src="docs/screenshots/cookbook.jpg" alt="Cookbook with cuisine filters" width="220"> | <img src="docs/screenshots/result.jpg" alt="Result showing two made recipes" width="220"> |
 
-Screenshots are from the iPhone 13 mini simulator; the result uses a deterministic UI-test tray. No personal device screenshot is included.
+The updated Home and Settings screenshots are from the iPhone 13 simulator. The earlier gameplay screenshots are from the iPhone 13 mini simulator; the result uses a deterministic UI-test tray. No personal device screenshot is included.
 
 ## Build and test
 
@@ -50,8 +50,10 @@ Run the unit and UI tests with an available simulator ID (`xcrun simctl list dev
 ```bash
 xcodebuild test -project Snackdraft.xcodeproj -scheme Snackdraft \
   -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
-  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES
 ```
+
+The separate **Snackdraft Purchases** scheme runs the StoreKit integration test against the local $1.99 non-consumable configuration. It does not enable paid upgrades in the beta.
 
 For a physical iPhone, select your own Apple Developer Team and bundle ID in Xcode. The optional install helper requires your team ID and paired device UDID:
 
@@ -75,4 +77,4 @@ SnackdraftUITests/ screen and interaction tests
 docs/              guides and simulator screenshots
 ```
 
-Snackdraft has no account, advertising, analytics, or backend. Progress stays on the device. See [Privacy](PRIVACY.md) and the [MIT license](LICENSE).
+The current beta has no account, advertisements, developer analytics, or game backend. Progress stays on the device. About, Privacy, Terms, and Support are available inside Settings. Advertising and a one-time Remove Ads upgrade are planned for a later release; the current beta does not sell that upgrade. See [Privacy](PRIVACY.md), [Terms](TERMS.md), [Support](SUPPORT.md), the [TestFlight release notes](docs/app-store/TESTFLIGHT.md), and the [MIT license](LICENSE).

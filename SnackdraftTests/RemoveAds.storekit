@@ -1,0 +1,20 @@
+{
+  "identifier": "4F261658-DFB7-44B5-A4BD-D8C52A471C71",
+  "nonRenewingSubscriptions": [],
+  "products": [{
+    "displayPrice": "1.99",
+    "familyShareable": false,
+    "internalID": "remove-ads",
+    "localizations": [{
+      "description": "Remove all Snackdraft advertisements with one purchase.",
+      "displayName": "Remove Ads",
+      "locale": "en_US"
+    }],
+    "productID": "com.sergiiziborov.snackdraft.removeads",
+    "referenceName": "Snackdraft Remove Ads",
+    "type": "NonConsumable"
+  }],
+  "settings": {"_failTransactionsEnabled": false, "_locale": "en_US", "_storefront": "USA"},
+  "subscriptionGroups": [],
+  "version": {"major": 3, "minor": 0}
+}

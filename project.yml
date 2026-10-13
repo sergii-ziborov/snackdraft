@@ -1,5 +1,20 @@
 name: Snackdraft
 
+schemes:
+  Snackdraft Purchases:
+    build:
+      targets:
+        Snackdraft: all
+    run:
+      config: Debug
+      storeKitConfiguration: SnackdraftTests/RemoveAds.storekit
+    test:
+      config: Debug
+      environmentVariables:
+        SNACKDRAFT_STOREKIT_TESTS: "1"
+      targets:
+        - SnackdraftTests
+
 options:
   bundleIdPrefix: com.sergiiziborov
   deploymentTarget:
@@ -12,7 +27,7 @@ settings:
     SWIFT_VERSION: "6.0"
     DEVELOPMENT_TEAM: XMS5ZC28UJ
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     TARGETED_DEVICE_FAMILY: "1,2"
     SUPPORTS_MACCATALYST: NO

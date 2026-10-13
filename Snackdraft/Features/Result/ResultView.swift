@@ -11,8 +11,6 @@ struct ResultView: View {
                 let short = geo.size.height < 760
                 let traySide = min(short ? 168 : 240, geo.size.width - 56)
                 ZStack {
-                    Palette.navy.ignoresSafeArea()
-                    ScreenBackground(image: outcome.world.backgroundAsset, dim: 0.38)
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: short ? 10 : 16) {
                             VStack(spacing: 6) {
@@ -92,7 +90,9 @@ struct ResultView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                .background {
+                    ScreenBackground(image: outcome.world.backgroundAsset, dim: 0.38)
+                }
             }
             .onAppear {
                 withAnimation(.spring(duration: 0.55, bounce: 0.32)) {

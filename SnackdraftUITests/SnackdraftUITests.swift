@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 @MainActor
 final class SnackdraftUITests: XCTestCase {
@@ -86,7 +87,8 @@ final class SnackdraftUITests: XCTestCase {
         XCTAssertTrue(app.buttons["free-world-tea"].exists)
         let cookFreely = app.staticTexts["Cook freely"].firstMatch
         XCTAssertTrue(cookFreely.waitForExistence(timeout: 5))
-        cookFreely.tap()
+        saveShot("free-world-selection")
+        app.buttons["free-world-tea"].tap()
         XCTAssertTrue(app.buttons["offer-0"].waitForExistence(timeout: 5))
         saveShot("free-play")
     }
@@ -105,13 +107,56 @@ final class SnackdraftUITests: XCTestCase {
         XCTAssertTrue(back.waitForExistence(timeout: 5))
         XCTAssertTrue(undo.isHittable)
         XCTAssertTrue(tip.isHittable)
-        XCTAssertGreaterThan(back.frame.minY, app.frame.minY + 30)
+        XCTAssertGreaterThan(back.frame.minY, app.frame.minY + (app.frame.width > 700 ? 20 : 30))
         XCTAssertLessThan(undo.frame.maxY, app.frame.maxY - 24)
         XCTAssertLessThan(tip.frame.maxY, app.frame.maxY - 24)
         saveShot("layout-play")
 
         app.buttons["offer-0"].press(forDuration: 0.2, thenDragTo: app.buttons["cell-0-0"])
         XCTAssertTrue(app.staticTexts["1/16"].waitForExistence(timeout: 5))
+    }
+
+    func testPageBackgroundsAndDocumentsReachScreenEdges() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.buttons["play-button"].waitForExistence(timeout: 5))
+        assertLightBackgroundAtScreenEdges()
+        XCTAssertTrue(app.buttons["daily-button"].isHittable)
+
+        for destination in ["Journey", "Cookbook", "Settings"] {
+            app.buttons[destination].tap()
+            XCTAssertTrue(app.buttons["back-button"].waitForExistence(timeout: 5))
+            assertLightBackgroundAtScreenEdges()
+            XCTAssertGreaterThan(app.buttons["back-button"].frame.minY, app.frame.width > 700 ? 20 : 30)
+            if destination == "Settings" {
+                let about = app.buttons["document-about"]
+                for _ in 0..<5 {
+                    if about.isHittable { break }
+                    app.swipeUp()
+                }
+                XCTAssertTrue(about.isHittable)
+                saveShot("layout-settings-bottom")
+                for document in ["about", "privacy", "terms", "support"] {
+                    let button = app.buttons["document-\(document)"]
+                    for _ in 0..<4 {
+                        if button.isHittable { break }
+                        app.swipeUp()
+                    }
+                    button.tap()
+                    let email = app.descendants(matching: .any).matching(identifier: "support-email-link").firstMatch
+                    XCTAssertTrue(app.scrollViews["app-document-scroll"].waitForExistence(timeout: 5))
+                    for _ in 0..<14 {
+                        if email.isHittable { break }
+                        app.swipeUp()
+                    }
+                    XCTAssertTrue(email.isHittable, "The end of \(document) must remain reachable")
+                    saveShot("document-\(document)-bottom")
+                    app.buttons["document-close-button"].tap()
+                }
+            }
+            app.buttons["back-button"].tap()
+        }
     }
 
     func testRecipeGuideExplainsShapesAndMultipleRecipes() throws {
@@ -173,5 +218,22 @@ final class SnackdraftUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func assertLightBackgroundAtScreenEdges(file: StaticString = #filePath, line: UInt = #line) {
+        let screenshot = XCUIScreen.main.screenshot().image
+        guard let image = screenshot.cgImage else { return XCTFail("Missing screenshot", file: file, line: line) }
+        let width = image.width
+        let height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let context = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        context?.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        for y in [Int(32 * screenshot.scale), height - Int(18 * screenshot.scale)] {
+            let offset = (y * width + Int(18 * screenshot.scale)) * 4
+            let brightness = pixels[offset...offset + 2].map(Double.init).reduce(0, +) / (3 * 255)
+            XCTAssertGreaterThan(brightness, 0.5, "The page background must cover the top and bottom safe areas", file: file, line: line)
+        }
     }
 }

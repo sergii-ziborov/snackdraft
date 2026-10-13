@@ -208,44 +208,47 @@ struct StarRow: View {
 struct ScreenHeader: View {
     var title: String
     var light: Bool = false
+    var backIdentifier: String = "back-button"
     var back: () -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Button(action: back) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(light ? Color.white : Palette.ink)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
-            .accessibilityIdentifier("back-button")
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+            .accessibilityIdentifier(backIdentifier)
             Spacer()
             Text(title)
                 .font(.sdDisplay(22))
                 .foregroundStyle(light ? Color.white : Palette.ink)
             Spacer()
-            Color.clear.frame(width: 18, height: 18)
+            Color.clear.frame(width: 44, height: 44)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
     }
 }
 
 struct PageShell<Content: View>: View {
     var title: String
     var onBack: () -> Void
+    var backIdentifier: String = "back-button"
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                ScreenHeader(title: title, back: onBack)
-                content()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
-            .background(Palette.cream)
+        VStack(spacing: 0) {
+            ScreenHeader(title: title, backIdentifier: backIdentifier, back: onBack)
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Palette.cream.ignoresSafeArea())
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmReset = false
+    @State private var document: AppDocument?
 
     var body: some View {
         @Bindable var model = model
@@ -26,11 +27,24 @@ struct SettingsView: View {
                     }
                 }
 
+                PurchaseSettingsSection()
+
                 Section("About") {
-                    LabeledContent("Version", value: "1.0.0")
-                    Text("Nine kitchens now share a growing pantry. Connect every ingredient in a dish by an edge, then serve immediately — or keep building the tray for extra combos and the feast bonus.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                    LabeledContent("Version", value: AppInfo.version)
+                    ForEach(AppDocument.allCases) { item in
+                        Button {
+                            document = item
+                        } label: {
+                            HStack {
+                                Text(item.title).foregroundStyle(Palette.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Palette.inkSoft)
+                            }
+                        }
+                        .accessibilityIdentifier("document-\(item.rawValue.lowercased())")
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -39,6 +53,10 @@ struct SettingsView: View {
         .onChange(of: model.progress.hapticsEnabled) { _, _ in model.saveProgress() }
         .onChange(of: model.progress.soundEnabled) { _, _ in model.saveProgress() }
         .onChange(of: model.progress.musicEnabled) { _, _ in model.saveProgress() }
+        .sheet(item: $document) { item in
+            AppDocumentView(document: item)
+                .preferredColorScheme(.light)
+        }
         .confirmationDialog("Reset all stars, snacks, and recipes?", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("Reset", role: .destructive) { model.resetProgress() }
             Button("Cancel", role: .cancel) {}
